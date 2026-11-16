@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>冒險者終極大對決｜剪刀石頭布</title>
+<style>
+:root{--bg:#101827;--panel:#1b2940;--panel2:#243550;--gold:#ffd166;--text:#f5f7fb;--muted:#b9c5d8;--accent:#65d6c4;--danger:#ff8585}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#263b59 0,#101827 55%);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;display:grid;place-items:center;padding:24px}
+main{width:min(760px,100%)}header{text-align:center;margin-bottom:22px}h1{font-size:clamp(1.8rem,5vw,2.7rem);margin:.2em 0;color:var(--gold)}header p{color:var(--muted);margin:0}
+.card{background:rgba(27,41,64,.96);border:1px solid #405575;border-radius:22px;padding:24px;box-shadow:0 18px 55px #0005;margin:14px 0}
+h2{margin:0 0 16px;font-size:1.35rem}label{display:block;margin:12px 0 7px;color:var(--muted)}input{width:100%;padding:13px 14px;border-radius:12px;border:1px solid #526987;background:#111d30;color:white;font-size:1rem}
+.equipment{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.equip{background:var(--panel2);border:2px solid transparent;color:var(--text);border-radius:14px;padding:14px 10px;text-align:left;cursor:pointer}.equip.selected{border-color:var(--gold);background:#3a4050}.equip strong{display:block;color:var(--gold);margin-bottom:6px}.equip small{color:var(--muted);line-height:1.4}
+button{font:inherit}.primary{width:100%;margin-top:18px;background:var(--gold);color:#1b2432;border:0;border-radius:13px;padding:13px 18px;font-weight:800;cursor:pointer}.primary:hover{filter:brightness(1.06)}button:disabled{opacity:.45;cursor:not-allowed}
+.hidden{display:none!important}.status{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);margin-bottom:14px}.score{display:grid;grid-template-columns:1fr 1fr;gap:12px}.score div{background:#111d30;padding:16px;border-radius:14px;text-align:center}.score b{display:block;font-size:2rem;color:var(--gold)}
+.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}.choice{background:#2a3c58;border:2px solid #526987;border-radius:16px;padding:18px 8px;color:white;cursor:pointer;font-size:1.1rem}.choice span{display:block;font-size:2.5rem;margin-bottom:5px}.choice:hover:not(:disabled){border-color:var(--accent);transform:translateY(-2px)}.choice:disabled{opacity:.4}
+.notice{background:#111d30;border-radius:12px;padding:13px;color:var(--muted);min-height:48px;line-height:1.55}.notice strong{color:var(--gold)}.log{max-height:170px;overflow:auto;color:var(--muted);font-size:.92rem;line-height:1.7;padding-left:20px}.result{text-align:center;font-size:1.2rem;color:var(--gold);font-weight:800}.tiny{font-size:.85rem;color:var(--muted)}
+@media(max-width:560px){.equipment{grid-template-columns:1fr}.equip{display:flex;gap:12px;align-items:center}.equip strong{min-width:100px}.card{padding:18px}.choices{gap:7px}.choice{padding:14px 4px;font-size:.95rem}}
+</style>
+</head>
+<body>
+<main>
+<header><div style="font-size:2.4rem">⚔️ 🛡️ ✊✋✌️</div><h1>冒險者終極大對決</h1><p>剪刀石頭布・裝備挑戰賽｜先取得 5 勝者獲勝！</p></header>
+<section class="card" id="setup">
+<h2>🧙 冒險者登入</h2>
+<label for="playerName">你的冒險者名字</label><input id="playerName" maxlength="20" placeholder="輸入名字開始冒險">
+<h2 style="margin-top:22px">🛡️ 選擇你的裝備</h2>
+<div class="equipment">
+<button class="equip selected" data-equip="1"><strong>⚔️ 必勝之刃</strong><small>第一局直接獲勝</small></button>
+<button class="equip" data-equip="2"><strong>🔮 預知之眼</strong><small>每局有 30% 機率預知電腦出拳</small></button>
+<button class="equip" data-equip="3"><strong>🛡️ 平手護符</strong><small>輸掉時有 30% 機率改判平手</small></button>
+</div>
+<button class="primary" id="start">開始挑戰</button>
+</section>
+<section class="card hidden" id="game">
+<div class="status"><span id="welcome"></span><span id="round">第 1 回合</span></div>
+<div class="score"><div>🏆 你<b id="playerScore">0</b>勝</div><div>🤖 電腦<b id="computerScore">0</b>勝</div></div>
+<div style="margin-top:18px"><h2>請出拳！</h2><div class="choices">
+<button class="choice" data-choice="剪刀"><span>✌️</span>剪刀</button>
+<button class="choice" data-choice="石頭"><span>✊</span>石頭</button>
+<button class="choice" data-choice="布"><span>✋</span>布</button>
+</div></div>
+<div class="notice" id="notice" aria-live="polite">選擇你的出拳，贏得 5 個回合即可成為猜拳大師！</div>
+<h2 style="margin-top:20px">📜 戰鬥紀錄</h2><ol class="log" id="log"></ol>
+</section>
+<section class="card hidden" id="end">
+<div class="result" id="finalResult"></div>
+<p class="tiny" style="text-align:center">新的挑戰會重置雙方分數，並重新啟用裝備效果。</p>
+<button class="primary" id="replay">🔄 再玩一次</button>
+<button class="primary" id="quit" style="background:#405575;color:white;margin-top:9px">結束遊戲</button>
+</section>
+</main>
+<script>
+const options=["剪刀","石頭","布"];
+const emoji={剪刀:"✌️",石頭:"✊",布:"✋"};
+let name="", equip="1", player=0, computer=0, round=1, bonusUsed=false, active=false;
+const $=id=>document.getElementById(id);
+document.querySelectorAll(".equip").forEach(btn=>btn.addEventListener("click",()=>{
+ document.querySelectorAll(".equip").forEach(b=>b.classList.remove("selected"));
+ btn.classList.add("selected"); equip=btn.dataset.equip;
+}));
+function log(message){const li=document.createElement("li");li.textContent=message;$("log").prepend(li);}
+function scores(){$("playerScore").textContent=player;$("computerScore").textContent=computer;$("round").textContent=`第 ${round} 回合`;}
+function begin(){
+ name=$("playerName").value.trim();
+ if(!name){$("playerName").focus();$("notice").textContent="⚠️ 請先輸入冒險者名字！";return;}
+ player=0;computer=0;round=1;bonusUsed=false;active=true;
+ $("setup").classList.add("hidden");$("end").classList.add("hidden");$("game").classList.remove("hidden");
+ $("welcome").textContent=`歡迎，${name}！裝備：${({"1":"必勝之刃","2":"預知之眼","3":"平手護符"})[equip]}`;
+ $("notice").textContent="冒險開始！請選擇剪刀、石頭或布。";$("log").innerHTML="";scores();
+ document.querySelectorAll(".choice").forEach(b=>b.disabled=false);
+ if(equip==="1"){log("⚔️ 已裝備必勝之刃：第一回合將直接獲勝。");}
+}
+function play(playerChoice){
+ if(!active)return;
+ let computerChoice=options[Math.floor(Math.random()*3)];
+ if(equip==="1" && round===1 && !bonusUsed){
+  bonusUsed=true;player++;log(`第 ${round} 回合：必勝之刃發動！你直接獲勝（電腦原本出了 ${computerChoice}）。`);
+  $("notice").innerHTML=`⚔️ <strong>必勝之刃發動！</strong> 第一局直接判定勝利！電腦本來出了 ${emoji[computerChoice]} ${computerChoice}。`;round++;scores();checkEnd();return;
+ }
+ let prediction="";
+ if(equip==="2" && Math.random()<.30){
+  prediction=`🔮 預知之眼發動！你預知到電腦將出 ${computerChoice}。 `;
+ }
+ let outcome="";
+ if(playerChoice===computerChoice){outcome="平手！沒有人得分。";}
+ else if((playerChoice==="剪刀"&&computerChoice==="布")||(playerChoice==="石頭"&&computerChoice==="剪刀")||(playerChoice==="布"&&computerChoice==="石頭")){player++;outcome="🎉 這回合你贏了！";}
+ else if(equip==="3" && Math.random()<.30){outcome="🛡️ 平手護符發動成功！這回合改判平手！";}
+ else{computer++;outcome="💻 這回合電腦贏了！";}
+ const msg=`第 ${round} 回合：你出 ${playerChoice}，電腦出 ${computerChoice}。${outcome}`;
+ log(msg);$("notice").textContent=prediction+`你出 ${emoji[playerChoice]} ${playerChoice}，電腦出 ${emoji[computerChoice]} ${computerChoice}。${outcome}`;
+ round++;scores();checkEnd();
+}
+function checkEnd(){
+ if(player<5&&computer<5)return;
+ active=false;document.querySelectorAll(".choice").forEach(b=>b.disabled=true);
+ $("game").classList.add("hidden");$("end").classList.remove("hidden");
+ $("finalResult").textContent=player===5?`🏆 恭喜冒險者【${name}】以 ${player}：${computer} 擊敗電腦！你憑藉裝備成為猜拳大師！`:`💻 很可惜，電腦以 ${computer}：${player} 獲得最終勝利，下次再來挑戰吧！`;
+}
+$("start").addEventListener("click",begin);
+document.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>play(btn.dataset.choice)));
+$("replay").addEventListener("click",begin);
+$("quit").addEventListener("click",()=>{$("end").classList.add("hidden");$("setup").classList.remove("hidden");$("game").classList.add("hidden");});
+$("playerName").addEventListener("keydown",e=>{if(e.key==="Enter")begin();});
+</script>
+</body>
+</html>
